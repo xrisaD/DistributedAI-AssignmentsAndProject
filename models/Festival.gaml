@@ -47,6 +47,7 @@ species Guest skills:[moving]{
 	bool targetCentre <- false;
 	bool targetStore <- false;
 	point targetPoint <- nil;
+	float distance <- 0.0;
 	
 	string personName <- "Undefined";
 	
@@ -63,6 +64,7 @@ species Guest skills:[moving]{
 	reflex timePass when: (isHungry or isThirsty) and targetPoint = nil {
 		targetPoint <- infoCentreLoc;
 		targetCentre <- true;
+		distance <- distance + (self.location distance_to targetPoint);
 	}
 	
 	
@@ -90,7 +92,7 @@ species Guest skills:[moving]{
 
 		targetCentre <- false;
 		targetStore <- true;
-
+		distance <- distance + (self.location distance_to targetPoint);
 	}
 	
 	reflex enterStore when: targetStore and location distance_to(targetPoint) < 2 {
@@ -202,11 +204,19 @@ species InfoCentre {
 
 
 experiment myExperiment type:gui {
+	init {
+		create simulation with:[seed::10];
+	}
 	output {
 		display myDisplay {
 			species Guest aspect:base;
 			species Store aspect:base;
 			species InfoCentre aspect:base;
+		}
+		display chartWithDistance {
+			chart "mean distance" {
+				data "mean distance without brain" value: Guest sum_of each.distance;
+			}
 		}
 	}
 }

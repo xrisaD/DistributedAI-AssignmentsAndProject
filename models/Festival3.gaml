@@ -9,11 +9,8 @@
 model Festival
 
 global {
-	int numGuests <- 20;
+	int numGuests <- 50;
 	int numStores <- 5;
-	int numInfoCentres <- 1;
-	
-	point infoCentreLoc <- {50,50};
 	
 	//thresholds for deciding store types 
 	int thr1 <- 2; // 1, 2 = 2 cafes
@@ -21,9 +18,10 @@ global {
 	int thrCount <- 1;
 	
 	init {
-		create Guest number:numGuests;
 		create Store number:numStores;
-		create InfoCentre number:numInfoCentres;
+		create InfoCentre;
+		create Guest number:numGuests;
+		create Security;
 				
 		loop counter from: 1 to: numGuests {
         	Guest myGuest <- Guest[counter - 1];
@@ -42,20 +40,20 @@ global {
 
 species Guest skills:[moving]{
 	
+	bool isEvil <- flip(0.2);
 	bool isHungry <- false;
 	bool isThirsty <- false;
 	bool targetCentre <- false;
 	bool targetStore <- false;
 	point targetPoint <- nil;
-	bool discover <- nil;
+	point infoCentreLoc <- nil;
 	float distance <- 0.0;
 	
-	// memory
-	list<point> restaurants;
-	list<point> cafes;
-	list<point> kiosks;
-		
 	string personName <- "Undefined";
+	
+	init {
+        infoCentreLoc <-InfoCentre[0].location;
+	}
 	
 	action setName(int num) {
 		personName <- "Person " + num;
@@ -68,46 +66,11 @@ species Guest skills:[moving]{
 	}
 	
 	reflex timePass when: (isHungry or isThirsty) and targetPoint = nil {
-		
-		if ((isHungry and isThirsty and length(kiosks) = 0) 
-			or (isHungry and length(restaurants) = 0) 
-			or (isThirsty and length(cafes) = 0)) {
-				discover <- true;
-		}
-		else if ((isHungry and isThirsty and length(kiosks) = numStores-thr2) 
-			or (isHungry and length(restaurants) = thr2-thr1) 
-			or (isThirsty and length(cafes) = thr1)) {
-			discover <- false;
-		}
-		else {
-			discover <- flip(0.5);
-		}
-		
-		// go to the infoCentre and ask for a new place
-		if (discover) {
-			targetPoint <- infoCentreLoc;
-			targetCentre <- true;	
-		} else {
-			// go to a place you have visited before
-			targetPoint <- findVisitedStore();
-			targetStore <- true;
-		}
+		targetPoint <- infoCentreLoc;
+		targetCentre <- true;
 		distance <- distance + (self.location distance_to targetPoint);
 	}
 	
-	point findVisitedStore {
-			if (isHungry and isThirsty) {
-				int index <- rnd(length (kiosks)-1);
-				return (kiosks at index);
-			} else if (isHungry) {
-				int index <- rnd(length (restaurants)-1);
-				return (restaurants at index);
-			} else if (isThirsty) {
-				int index <- rnd(length (cafes)-1);
-				return (cafes at index);
-			}
-	}	
-		
 	
 	reflex moveToTarget when: targetPoint != nil {
 		do goto target:targetPoint; 
@@ -117,28 +80,27 @@ species Guest skills:[moving]{
 		
 		if (isHungry and isThirsty) {
 			ask InfoCentre {
-				myself.targetPoint <- self.getKiosk(myself.kiosks);
+				myself.targetPoint <- self.getKiosk();
 			}
-			add targetPoint to: kiosks;
 		}
 		else if (isHungry) {
 			ask InfoCentre {
-				myself.targetPoint <- self.getRestaurant(myself.restaurants);
+				myself.targetPoint <- self.getRestaurant();
 			}
-			add targetPoint to: restaurants;
 		}
-		else {
+		else if (isThirsty){
 			ask InfoCentre {
-				myself.targetPoint <- self.getCafe(myself.cafes);
+				myself.targetPoint <- self.getCafe();
 			}
-			add targetPoint to: cafes;
 		}
 
 		targetCentre <- false;
 		targetStore <- true;
 		distance <- distance + (self.location distance_to targetPoint);
-
+		
+		
 	}
+	
 	
 	reflex enterStore when: targetStore and location distance_to(targetPoint) < 2 {
 		isHungry <- false;
@@ -148,7 +110,7 @@ species Guest skills:[moving]{
 	}
 	
 	aspect base {
-		rgb agentColor <- rgb("green");
+		rgb agentColor <- rgb("lightgreen");
 		
 		if (isHungry and isThirsty) {
 			agentColor <- rgb("red");
@@ -158,18 +120,20 @@ species Guest skills:[moving]{
 			agentColor <- rgb("yellow");
 		}
 		
-		draw circle(1) color: agentColor;
+		rgb borderColor <- nil;
+		if (isEvil) {
+			borderColor <- rgb("black");
+		}
+		
+		draw circle(1) color: agentColor border: borderColor;
 	}
 }
-
-
 
 
 species Store {
 	string storeName <- "Undefined";
 	string storeType <- "Undefined";
 	rgb agentColor <- rgb("lightgray");
-	
 	
 	init {
 		if (thrCount <= thr1) { // Cafe
@@ -192,14 +156,10 @@ species Store {
 		storeName <- "Store " + num;
 	}
 	
-	
-	
 	aspect base {
 		draw triangle(5) color: agentColor;
 	}
 }
-
-
 
 species InfoCentre {
 	
@@ -208,6 +168,8 @@ species InfoCentre {
 	list<Store> kiosks;
 	list<Store> restaurants;
 	list<Store> cafes;
+	
+	list<Guest> foundEvils;
 	
 	init {
 		loop i over: Store {
@@ -222,67 +184,92 @@ species InfoCentre {
 	}
 	
 	// select and return a random kiosk
-	point getKiosk(list<point> seenKiosks) {
-		list<point> notSeen;
-		loop i over: kiosks {
-			if !(seenKiosks contains i.location) {
-				add i.location to: notSeen;
-			}
-		}
-		int num <- length (notSeen);
+	point getKiosk {
+		int num <- length (kiosks);
 		int index <- rnd(num-1);
-		return notSeen at index;
-		
+		return (kiosks at index).location;
 	}
 	
 	// select and return a random cafe
-	point getCafe(list<point> seenCafes) {
-		list<point> notSeen;
-		loop i over: cafes {
-			if !(seenCafes contains i.location) {
-				add i.location to: notSeen;
-			}
-		}
-		int num <- length (notSeen);
+	point getCafe {
+		int num <- length (cafes);
 		int index <- rnd(num-1);
-		return notSeen at index;
+		return (cafes at index).location;
 	}
 	
 	// select and return a random restaurant
-	point getRestaurant (list<point> seenRestaurants) {
-		list<point> notSeen;
-		loop i over: restaurants {
-			if !(seenRestaurants contains i.location) {
-				add i.location to: notSeen;
+	point getRestaurant {
+		int num <- length (restaurants);
+		int index <- rnd(num-1);
+		return (restaurants at index).location;
+	}
+
+	
+	// location distance_to(targetPoint) < 2
+	reflex findEvils when: !empty(Guest at_distance 2) {
+		list<Guest> possibleEvils <- Guest at_distance 5;
+		loop g over: possibleEvils {
+			if g.isEvil and !(foundEvils contains g){
+				do callSecurity(g);
+				add g to: foundEvils;
 			}
 		}
-		int num <- length (notSeen);
-		int index <- rnd(num-1);
-		return notSeen at index;
 	}
+	
+	action callSecurity(Guest guest) {
+		ask Security {
+			add guest to: self.evils; 
+		}
+	}
+	
 	aspect base {
 		rgb agentColor <- rgb("blue");
-		draw square(5) color: agentColor at: infoCentreLoc;
+		draw square(5) color: agentColor;
 	}
 	
 
 }
 
+species Security skills:[moving]{
+	
+	list<Guest> evils;
+	
+	reflex patrol when: length(evils) <= 0{
+		do wander;
+	}
+	
+	reflex followEvil when: length(evils) > 0 {
+		Guest evil <- evils[0];
+		do goto target:evil.location speed: 2.0;
+	}
+	
+	reflex killEvil when: !empty(evils) and location distance_to(evils[0])<2{
+		Guest e <- evils[0];
+		remove from: evils index:0;
+		ask e {
+			do die;
+		}
+	}
+	
+	aspect base {
+		rgb agentColor <- rgb("blue");
+		draw circle(1) color: agentColor;
+	}
+}
+
 
 
 experiment myExperiment type:gui {
-	init {
-		create simulation with:[seed::10];
-	}
 	output {
 		display myDisplay {
+			species Security aspect:base;
 			species Guest aspect:base;
 			species Store aspect:base;
 			species InfoCentre aspect:base;
 		}
-		display chartWithDistance {
-			chart "mean distance" {
-				data "mean distance with brain" value: Guest sum_of each.distance;
+		display chartWithEvils {
+			chart "evils" {
+				data "total evils" value: Guest count each.isEvil;
 			}
 		}
 	}
