@@ -281,8 +281,8 @@ experiment myExperiment type:gui {
 			species InfoCentre aspect:base;
 		}
 		display chartWithDistance {
-			chart "mean distance" {
-				data "mean distance with brain" value: Guest sum_of each.distance;
+			chart "sum distance" {
+				data "sum distance with brain" value: Guest sum_of each.distance;
 			}
 		}
 	}
