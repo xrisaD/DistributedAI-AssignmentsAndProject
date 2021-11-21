@@ -1,18 +1,19 @@
 /**
-* Name: Festival1
+* Name: Festival2
 * Based on the internal empty template. 
 * Author: Ilias Merentitis, Chrysoula Dikonimaki
 * Tags: 
 */
 
 
-model Festival1
+model Festival2
 
 global {
-	int numGuests <- 20;
-	int numAuctioneers <- 1;
-	list<string> items <- ["painting", "book", "ticket", "cd"];
+	list<string> items <- 		["painting", "book", "ticket", "cd"];
+	list<bool> itemsSoldNow <-  [false, false, false, false];
 	list<string> itemsColour <- ["lightblue", "lightgreen", "yellow", "red"];
+	int numAuctioneers <- length(items);
+	int numGuests <- 20;
 	
 	init {
 		create Guest number:numGuests;
@@ -37,10 +38,13 @@ global {
 species Guest skills:[moving, fipa]{
 		
 	string personName <- "Undefined";
+	
 	point targetPoint <- nil;
 	int idx <- rnd(0, length(items)-1);
 	string desiredItem <- items[idx];
 	int maxPrice <- rnd(100, 90000);
+	
+	rgb agentColour <- itemsColour[idx];
 	
 	action setName(int num) {
 		personName <- "Guest" + num;
@@ -77,8 +81,7 @@ species Guest skills:[moving, fipa]{
 	}
 	
 	aspect base {
-		rgb agentColor <- rgb("lightgreen");
-		draw circle(1) color: rgb(itemsColour[idx]);
+		draw circle(1) color: agentColour;
 	}
 }
 
@@ -93,6 +96,8 @@ species Auctioneer skills: [fipa]{
 	float timeSent <- 0.0;
 	float sellingPrice <- 100000.0;
 	
+	int idx <- nil;
+	
 	action setName(int num) {
 		personName <- "Auctioneer" + num;
 	}
@@ -104,8 +109,20 @@ species Auctioneer skills: [fipa]{
 	
 	reflex announcetAuction when: isSelling and !sentMsg{
 		write "Start Auction";
-		int idx <- rnd(0, length(items)-1);
-		sellingItem <- items[idx];
+		
+		int c <- 0;
+		list<int> availableItemsIdx <- nil;
+		loop i over: itemsSoldNow {
+			if (!i) {
+				add c to: availableItemsIdx;
+			}
+			c <- c + 1;
+		}
+		
+		idx <- availableItemsIdx[rnd(0, length(availableItemsIdx)-1)];
+		itemsSoldNow[idx] <- true;
+		
+		sellingItem <- items[0];//items[idx];
 		guests <- Guest where (each.desiredItem = sellingItem);
 		
 		do start_conversation (to :: guests, protocol :: 'fipa-request', performative :: 'inform', contents :: ['item for sale', sellingItem]);
@@ -124,12 +141,14 @@ species Auctioneer skills: [fipa]{
 	}
 	
 	reflex haveBids when: sentMsg and time = timeSent+1 and !empty(proposes) {
-		write "Item sold";
 		message m  <- proposes at 0;
+		write "Item sold from: "+ personName + " price: " + sellingPrice + " message:"+ m;
 		write m;
 		isSelling <- false;
 		sentMsg <- false;
 		sellingPrice <- 100000.0;
+		itemsSoldNow[idx] <- false;
+		write("itemsSoldNow : ", itemsSoldNow);
 	}
 	
 	aspect base {
