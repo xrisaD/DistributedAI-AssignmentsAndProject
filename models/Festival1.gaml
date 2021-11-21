@@ -9,8 +9,8 @@
 model Festival1
 
 global {
-	int numGuests <- 20;
-	int numAuctioneers <- 1;
+	int numGuests <- 5;
+	int numAuctioneers <- 2;
 	list<string> items <- ["painting", "book", "ticket", "cd"];
 	list<string> itemsColour <- ["lightblue", "lightgreen", "yellow", "red"];
 	
@@ -53,27 +53,25 @@ species Guest skills:[moving, fipa]{
 	reflex getInform when: !empty(informs) {
 		loop i over: informs {
 			write(personName + " received message (Inform): " + i.contents + " from " + i.sender);
+			maxPrice <- rnd(100, 90000);
 		}
 	}
 	
 	reflex getPrice when: !empty(cfps) {
 		loop i over: cfps {
-			write(personName + " received message (cfps): " + i.contents + " from " + i.sender);
 			
 			loop currentPrice over: i.contents {
 				int diff <- (currentPrice as int) - maxPrice;
-				write "Diff: " + diff;
+				write(personName + " received message (cfps): " + i.contents + " from " + i.sender+diff);
+			
 				if (diff <= 0) {
-					write "I bid";
-					do propose with: (message: i, contents: ['i bid']);
+					do propose with: (message: i, contents: [currentPrice]);
+				} else {
+					do propose with: (message: i, contents: [0]);
 				}
 			}
 
 		}
-	}
-
-	reflex moveToTarget when: targetPoint != nil {
-		do goto target:targetPoint; 
 	}
 	
 	aspect base {
@@ -90,15 +88,16 @@ species Auctioneer skills: [fipa]{
 	string sellingItem <- nil;
 	bool sentMsg <- false;
 	list<Guest> guests <- nil;
-	float timeSent <- 0.0;
+	bool someoneBid <- false;
 	float sellingPrice <- 100000.0;
+	float minPrice <- 60000.0;
 	
 	action setName(int num) {
 		personName <- "Auctioneer" + num;
 	}
 
 	reflex timePass when: !isSelling {
-		isSelling <- flip(0.1);
+		isSelling <- flip(0.4);
 	}
 	
 	
@@ -112,25 +111,36 @@ species Auctioneer skills: [fipa]{
 		do start_conversation (to :: guests, protocol :: 'fipa-request', performative :: 'cfp', contents :: [sellingPrice]);
 	
 		sentMsg <- true;
-		timeSent <- time;
 	}
 	
-	reflex noBids when: sentMsg and time = timeSent+1 and empty(proposes) {
-		write "No proposes";
+	reflex haveBids when: sentMsg and !empty(proposes) {
+		someoneBid <- false;
+		loop propose over: proposes {
+			loop price over: propose.contents {
+				if (price as float) = sellingPrice {
+					write "Item SOLD, price: " + price + " guest: " + propose.sender;
+					do accept_proposal with: (message:: propose, contents:: []);
+					isSelling <- false;
+					sentMsg <- false;
+					sellingPrice <- 100000.0;
+					someoneBid <- true;
+				} else {
+					do reject_proposal with: (message:: propose, contents:: []);
+				}
+			}
+		}
+		
+	}
+	reflex startAgain when: isSelling and !someoneBid{
 		sellingPrice <- sellingPrice*90/100;
-		write "new selling price :" + sellingPrice;
-		timeSent <- time;
+		if (sellingPrice < minPrice ) {
+			write "RESTART";
+			do start_conversation (to :: guests, protocol :: 'fipa-request', performative :: 'inform', contents :: ['item for sale', sellingItem]);
+			sellingPrice <- 100000.0;
+		}
 		do start_conversation (to :: guests, protocol :: 'fipa-request', performative :: 'cfp', contents :: [sellingPrice]);
 	}
 	
-	reflex haveBids when: sentMsg and time = timeSent+1 and !empty(proposes) {
-		write "Item sold";
-		message m  <- proposes at 0;
-		write m;
-		isSelling <- false;
-		sentMsg <- false;
-		sellingPrice <- 100000.0;
-	}
 	
 	aspect base {
 		rgb agentColor <- rgb("blue");
