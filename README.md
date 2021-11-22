@@ -18,5 +18,5 @@ Festival3.gaml: Challenge 2 - Removing Bad Behaviour Agents
 A new agent (Security Guard) is created  who kills the bad agents.
 <br>
 <br>
-Festival4.gaml: Extra effort - Find the nearest shop
+Festival4.gaml: Extra effort - Find the closest shop
 
