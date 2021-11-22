@@ -4,6 +4,8 @@ Distributed Artificial Intelligence Course, First Assignment @KTH
 <br>
 A simulation of a Festival with 3 types of agents: Guests, Stores and an Information Center.
 <br>
+![message flow](images/message1.PNG)
+<br>
 Festival1.gaml: Implementation of the basic part of the assignment.
 <br>
 <br>
