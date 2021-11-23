@@ -2,17 +2,19 @@
 * Name: Festival1
 * Based on the internal empty template. 
 * Author: Ilias Merentitis, Chrysoula Dikonimaki
-* Tags: 
+* DUTCH AUCTION
 */
 
 
 model Festival1
 
 global {
-	int numGuests <- 5;
-	int numAuctioneers <- 2;
+	int numGuests <- 50;
+	int numAuctioneers <- 1;
 	list<string> items <- ["painting", "book", "ticket", "cd"];
 	list<string> itemsColour <- ["lightblue", "lightgreen", "yellow", "red"];
+	
+	float totalAmountSold <- 0.0;
 	
 	init {
 		create Guest number:numGuests;
@@ -119,6 +121,7 @@ species Auctioneer skills: [fipa]{
 			loop price over: propose.contents {
 				if (price as float) = sellingPrice {
 					write "Item SOLD, price: " + price + " guest: " + propose.sender;
+					totalAmountSold <- totalAmountSold + sellingPrice;
 					do accept_proposal with: (message:: propose, contents:: []);
 					isSelling <- false;
 					sentMsg <- false;
@@ -151,10 +154,18 @@ species Auctioneer skills: [fipa]{
 
 
 experiment myExperiment type:gui {
+	init {
+		create simulation with:[seed::10];
+	}
 	output {
 		display myDisplay {
 			species Guest aspect:base;
 			species Auctioneer aspect:base;
+		}
+		display chartWithDistance {
+			chart "sum of sales" {
+				data "sum of sales of Dutch auction" value: totalAmountSold;
+			}
 		}
 	}
 }

@@ -2,17 +2,19 @@
 * Name: Festival1
 * Based on the internal empty template. 
 * Author: Ilias Merentitis, Chrysoula Dikonimaki
-* Tags: 
+* SEALED BID AUCTION
 */
 
 
-model Festival1
+model Festival3
 
 global {
-	int numGuests <- 10;
+	int numGuests <- 50;
 	int numAuctioneers <- 1;
 	list<string> items <- ["painting", "book", "ticket", "cd"];
 	list<string> itemsColour <- ["lightblue", "lightgreen", "yellow", "red"];
+	
+	float totalAmountSold <- 0.0;
 	
 	init {
 		create Guest number:numGuests;
@@ -113,19 +115,24 @@ species Auctioneer skills: [fipa]{
 			}
 		}
 		
+		bool sold <- false;
 		// sold at the max price
 		loop propose over: proposes {
 			loop price over: propose.contents {
-				if (price as int) = maxPrice {
+				if (price as int) = maxPrice  and sold = false {
 					do accept_proposal with: (message:: propose, contents:: []);
+					sold <- true;
 				} else {
 					do reject_proposal with: (message:: propose, contents:: []);
 				}
 			}
 		}
-		write "SOLD to: " + maxPropose.sender +" Price: "+maxPrice;
+		
+		write "SOLD to: " + maxPropose.sender +" Price: "+ maxPrice;
+		totalAmountSold <- totalAmountSold + maxPrice;
 		isSelling <- false;
 		sentMsg <- false;
+		sold <- false;
 		
 	}
 	
@@ -138,10 +145,18 @@ species Auctioneer skills: [fipa]{
 
 
 experiment myExperiment type:gui {
+	init {
+		create simulation with:[seed::10];
+	}
 	output {
 		display myDisplay {
 			species Guest aspect:base;
 			species Auctioneer aspect:base;
+		}
+		display chartWithDistance {
+			chart "sum of sales" {
+				data "sum of sales of Sealed Bid auction" value: totalAmountSold;
+			}
 		}
 	}
 }
