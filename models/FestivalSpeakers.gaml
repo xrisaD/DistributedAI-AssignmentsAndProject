@@ -36,15 +36,18 @@ species Queen skills: [fipa] {
 	Queen succ <- nil;
 	int x <- -1;
 	int y <- -1;
-	bool isSet <- false;
+	bool systemStable <- false;
 	list<int> availableX <- [];
 	
 	init {
+		do initializeList;
+	}
+	
+	action initializeList {
 		loop i over: range(0, grid-1) {
 			add i to: availableX;
 		}
 	}
-	
 	action setY (int pointY) {
 		y <- pointY;
 	}
@@ -62,47 +65,55 @@ species Queen skills: [fipa] {
 		do start_conversation (to :: [succ], protocol :: 'fipa-request', performative :: 'inform', contents :: ["start"]);
 			
 	}
+
 	
-	action place {
-//		if (succ!=nil) {
-//			do start_conversation (to :: [succ], protocol :: 'fipa-request', performative :: 'inform', contents :: ["start"]);		
-//		}
-	}
-	
-	reflex getInform when: !empty(informs) {
+	reflex getInform when: !empty(informs) and !systemStable {
 		loop i over: informs {
 			loop content over: i.contents {
 				if (content = "start") {
-					// choose a point
-					int index <- rnd(0, length(availableX)-1);
-					x <- availableX[index];
-					write x;
-					write y;
-					write "ask pred "+y;
-					// ask your predecessor if this point is available
-					do start_conversation (to :: [pred], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["ask", x, y]);
-					
+					do choocePointAndAsk;
+				} else if (content = "systemStable") {
+					systemStable <- true;
+					if (pred != nil) {
+						do start_conversation (to :: [pred], protocol :: 'fipa-request', performative :: 'inform', contents :: ["systemStable"]);
+					}
 				}
 				
 			}
 		}
 	}
 	
-	reflex getCpf when: !empty(cfps) {
+	action choocePointAndAsk {
+		// choose a point
+		int index <- rnd(0, length(availableX)-1);
+		x <- availableX[index];
+		write "I am "+y+" and I choose "+x;
+		if (pred != nil) {
+			// ask your predecessor if this point is available
+			do start_conversation (to :: [pred], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["ask", x, y]);	
+		}
+	}
+	
+	
+	reflex getCpf when: !empty(cfps) and !systemStable {
 		loop i over: cfps {
 			list con <- i.contents;
 			if (con[0] = "ask") {
-				write "receive ask "+y;
+				write "I am "+y+" and I receive an [ASK] message from my succ";
 				// check point
 				int succX <- con[1];
 				int succY <- con[2];
 				bool isOk <- checkPoint(succX, succY);
-				if (isOk) {
+				write "I am "+y+" and isOk value is: "+isOk;
+				if (isOk and pred != nil) {
 					// ask predecessor
-					write "is ok "+y;
-					do start_conversation (to :: [succ], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["ask", succX, succY]);
-				} else {
-					write "not ok "+y;
+					write "is Ok and not nill";
+					do start_conversation (to :: [pred], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["ask", succX, succY]);
+				} else if (isOk and pred = nil) {
+					write "is Ok and nill";
+					do start_conversation (to :: [succ], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["accept", succX, succY]);
+				}else {
+					write "not ok";
 					do start_conversation (to :: [succ], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["reject", succX, succY]);
 				}
 			} else if (con[0] = "reject"){
@@ -110,11 +121,64 @@ species Queen skills: [fipa] {
 				int predY <- con[2];
 				
 				if (predY != y) {
-					write "I am "+ y;
 					do start_conversation (to :: [succ], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["reject", predX, predY]);
 				} else {
 					// rejected point
 					write "reject";
+					// remove this point and choose a different point
+					remove x from: availableX;
+					if (length(availableX) > 0) {
+						do choocePointAndAsk;
+					} else {
+						// init again the list
+						do initializeList;
+						// you need to reorder the predecessor
+						if (pred != nil) {
+							do start_conversation (to :: [pred], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["reorder"]);	
+						} else {
+							do choocePointAndAsk;
+						}
+					}
+					
+				}
+			} else if (con[0] = "accept") {
+				
+				
+				if(succ = nil) {
+					systemStable <- true;
+					do start_conversation (to :: [pred], protocol :: 'fipa-request', performative :: 'inform', contents :: ["systemStable"]);
+				}
+				else {
+					write "accept";
+					int predX <- con[1];
+					int predY <- con[2];
+					
+					if (predY != y) {
+						// send accept to the successor 
+						do start_conversation (to :: [succ], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["accept", predX, predY]);
+					} else {
+						// start the next queen
+						if (succ  != nil) {
+							do start_conversation (to :: [succ], protocol :: 'fipa-request', performative :: 'inform', contents :: ["start"]);	
+						}
+					}
+				}
+
+			} else if (con[0] = "reorder") {
+				// delete the current point
+				remove x from: availableX;
+				if (length(availableX) > 0) {
+					// choose another poijnt
+					do choocePointAndAsk;
+				} else {
+					// init again the list
+					do initializeList;
+					// you need to reorder the predecessor
+					if (pred != nil) {
+						do start_conversation (to :: [pred], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["reorder"]);	
+					} else {
+						do choocePointAndAsk;
+					}
 				}
 			}
 		}
@@ -127,21 +191,11 @@ species Queen skills: [fipa] {
 			return false;
 		} else {
 			int diff <- succY - y;
-			// [x+diff, y-diff]
-			// [x+diff, y+diff]
-			if ((succY = y-diff) or (succY = y+diff)){
+			if ((succX = x-diff) or (succX = x+diff)){
 				return false;
 			}
 		}
 		return true;
-	}
-	reflex getAnsweFromPred {
-		// if the point is available then inform your succ to start
-		
-		// else
-		   //if other available point exists then check the next point (next x)
-		
-			// else,
 	}
 	
 	aspect aspect {
