@@ -41,7 +41,7 @@ species Queen skills: [fipa] {
 	
 	init {
 		loop i over: range(0, grid-1) {
-			availableX[i] <- i;
+			add i to: availableX;
 		}
 	}
 	
@@ -74,8 +74,13 @@ species Queen skills: [fipa] {
 			loop content over: i.contents {
 				if (content = "start") {
 					// choose a point
-					
+					int index <- rnd(0, length(availableX)-1);
+					x <- availableX[index];
+					write x;
+					write y;
+					write "ask pred "+y;
 					// ask your predecessor if this point is available
+					do start_conversation (to :: [pred], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["ask", x, y]);
 					
 				}
 				
@@ -83,6 +88,53 @@ species Queen skills: [fipa] {
 		}
 	}
 	
+	reflex getCpf when: !empty(cfps) {
+		loop i over: cfps {
+			list con <- i.contents;
+			if (con[0] = "ask") {
+				write "receive ask "+y;
+				// check point
+				int succX <- con[1];
+				int succY <- con[2];
+				bool isOk <- checkPoint(succX, succY);
+				if (isOk) {
+					// ask predecessor
+					write "is ok "+y;
+					do start_conversation (to :: [succ], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["ask", succX, succY]);
+				} else {
+					write "not ok "+y;
+					do start_conversation (to :: [succ], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["reject", succX, succY]);
+				}
+			} else if (con[0] = "reject"){
+				int predX <- con[1];
+				int predY <- con[2];
+				
+				if (predY != y) {
+					write "I am "+ y;
+					do start_conversation (to :: [succ], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["reject", predX, predY]);
+				} else {
+					// rejected point
+					write "reject";
+				}
+			}
+		}
+	}
+	
+
+	
+	bool checkPoint(int succX, int succY) {
+		if (succX = x) {
+			return false;
+		} else {
+			int diff <- succY - y;
+			// [x+diff, y-diff]
+			// [x+diff, y+diff]
+			if ((succY = y-diff) or (succY = y+diff)){
+				return false;
+			}
+		}
+		return true;
+	}
 	reflex getAnsweFromPred {
 		// if the point is available then inform your succ to start
 		
