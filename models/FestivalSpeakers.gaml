@@ -13,6 +13,9 @@ global {
 	int queens <- grid;
 	float gridSize <- 100/grid;
 	init {
+	
+	
+	
 		create Queen number:queens;
 		loop counter from: 0 to: queens - 1 {
         	Queen q <- Queen[counter];
@@ -91,6 +94,9 @@ species Queen skills: [fipa] {
 		if (pred != nil) {
 			// ask your predecessor if this point is available
 			do start_conversation (to :: [pred], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["ask", x, y]);	
+		} else {
+			// we are the first one so we don't have to ask sb
+			do start_conversation (to :: [succ], protocol :: 'fipa-request', performative :: 'inform', contents :: ["start"]);	
 		}
 	}
 	
@@ -143,7 +149,6 @@ species Queen skills: [fipa] {
 				}
 			} else if (con[0] = "accept") {
 				
-				
 				if(succ = nil) {
 					systemStable <- true;
 					do start_conversation (to :: [pred], protocol :: 'fipa-request', performative :: 'inform', contents :: ["systemStable"]);
@@ -165,6 +170,7 @@ species Queen skills: [fipa] {
 				}
 
 			} else if (con[0] = "reorder") {
+				write "reorder" + y;
 				// delete the current point
 				remove x from: availableX;
 				if (length(availableX) > 0) {
@@ -177,6 +183,7 @@ species Queen skills: [fipa] {
 					if (pred != nil) {
 						do start_conversation (to :: [pred], protocol :: 'fipa-request', performative :: 'cfp', contents :: ["reorder"]);	
 					} else {
+						write "Problem";
 						do choocePointAndAsk;
 					}
 				}
