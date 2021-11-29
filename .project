@@ -26,5 +26,10 @@
 			<type>1</type>
 			<locationURI>CACHE_LOC/upload.wikimedia.org+_++_+wikipedia+_+en+_+thumb+_+8+_+84+_+Panathinaikos_F.C._logo.svg+_+1200px-Panathinaikos_F.C._logo.svg.png</locationURI>
 		</link>
+		<link>
+			<name>external/file-20210401-13-z6rl6z.jpg</name>
+			<type>1</type>
+			<locationURI>CACHE_LOC/images.theconversation.com+_++_+files+_+393210+_+original+_+file-20210401-13-z6rl6z.jpg</locationURI>
+		</link>
 	</linkedResources>
 </projectDescription>
