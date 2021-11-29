@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>AgentsHW3</name>
+	<name>HW3 Festival</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -15,4 +15,16 @@
 		<nature>org.eclipse.xtext.ui.shared.xtextNature</nature>
 		<nature>msi.gama.application.gamaNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>external/1200px-Panathinaikos_BC_logo.svg.png</name>
+			<type>1</type>
+			<locationURI>CACHE_LOC/upload.wikimedia.org+_++_+wikipedia+_+en+_+thumb+_+1+_+18+_+Panathinaikos_BC_logo.svg+_+1200px-Panathinaikos_BC_logo.svg.png</locationURI>
+		</link>
+		<link>
+			<name>external/1200px-Panathinaikos_F.C._logo.svg.png</name>
+			<type>1</type>
+			<locationURI>CACHE_LOC/upload.wikimedia.org+_++_+wikipedia+_+en+_+thumb+_+8+_+84+_+Panathinaikos_F.C._logo.svg+_+1200px-Panathinaikos_F.C._logo.svg.png</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>

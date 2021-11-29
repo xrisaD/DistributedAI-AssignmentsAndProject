@@ -200,7 +200,10 @@ species Queen skills: [fipa] {
 	
 	aspect aspect {
 		if (x != -1 and y!= -1) {
-			draw circle(2) at: MyGrid[x, y] color: #black;
+			image_file  paobc <- image_file("https://upload.wikimedia.org/wikipedia/en/thumb/1/18/Panathinaikos_BC_logo.svg/1200px-Panathinaikos_BC_logo.svg.png");
+			draw paobc size: (100/grid)*0.7 at: MyGrid[x, y];
+			//image_file  paofc <- image_file("https://upload.wikimedia.org/wikipedia/en/thumb/8/84/Panathinaikos_F.C._logo.svg/1200px-Panathinaikos_F.C._logo.svg.png");
+        	//draw paofc size: 15 at: MyGrid[x, y];
 		}
 	}
 	
@@ -212,18 +215,18 @@ grid MyGrid width: grid height: grid {
     	rgb agentColor <- nil;
     	if (grid_x mod 2 = 0) {
     		if (grid_y mod 2 = 0) {
-    			agentColor <- rgb("green");
+    			agentColor <- rgb(0, 122, 61);
     		} else {
     			agentColor <- rgb("white");
     		}
     	} else {
     		if (grid_y mod 2 = 1) {
-    			agentColor <- rgb("green");
+    			agentColor <- rgb(0, 122, 61);
     		} else {
     			agentColor <- rgb("white");
     		}
     	}
-        draw square(gridSize) color: agentColor;	
+    	draw square(gridSize) color: agentColor;	
     }
 }
 
