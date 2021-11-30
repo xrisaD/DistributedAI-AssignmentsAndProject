@@ -52,7 +52,7 @@ species Stage skills: [fipa] {
 	reflex timePass when: !live {
 		live <- true;
 		if (stageIndex > 0) {
-			endTime <- time + 600;
+			endTime <- time + 300;
 		} else {
 			endTime <- #infinity;
 		}
