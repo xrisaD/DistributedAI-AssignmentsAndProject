@@ -46,11 +46,15 @@ species place {
 
 species guest skills: [moving, fipa] control:simple_bdi {
 	
-	float viewDist <- 20.0;
-	float viewDistPlace <- 1.0;
+	float viewDist <- 1.0;
+	float viewDistPlace <- 50.0;
 	string moodFor <- placeTypes[rnd(0, length(placeTypes)-1)];
+	int timeDiff <- rnd(500,1000);
+	float currTime <- time;
 	
 	list<string> guestsInteracted <- nil;
+	list<guest> acceptedFrom <- nil;
+	list<guest> rejectedFrom <- nil;
 	list<point> placesVisited <- nil;
 	bool isInteracting <- false;
 	int happiness <- 0;
@@ -108,8 +112,9 @@ species guest skills: [moving, fipa] control:simple_bdi {
 		do wander;
 	}
 	
+
 	
-	perceive target: guest in: viewDistPlace {
+	perceive target: guest in: viewDist {
 		
 		if(myself.guestType = "noisyPartyAnimal") {
 			
@@ -232,16 +237,23 @@ species guest skills: [moving, fipa] control:simple_bdi {
     
     reflex getAccepts when: !empty(accept_proposals) {
     	loop p over: accept_proposals {
-    		happiness <- happiness + 1;
-    		write "ACCEPT " + self.name + " HAPPINESS " + happiness + " FROM " + p.sender;
+    		if(!(acceptedFrom contains p.sender)) {
+	    		add p.sender to: acceptedFrom;
+	    		happiness <- happiness + 1;	
+	    		write "ACCEPT " + self.name + " HAPPINESS " + happiness + " FROM " + p.sender;
+    		}
+    		
     	}
-    	
     }
     
     reflex getRejects when: !empty(reject_proposals) {
-    	loop p over: accept_proposals {
-    		happiness <- happiness - 1;
-    		write "REJECT " + self.name + " HAPPINESS " + happiness + " FROM " + p.sender;
+    	loop p over: reject_proposals {
+    		if(!(rejectedFrom contains p.sender)) {
+	    		add p.sender to: rejectedFrom;
+	    		happiness <- happiness - 1;
+    			write "REJECT " + self.name + " HAPPINESS " + happiness + " FROM " + p.sender;
+    		}
+    		
     	}
     }
     
@@ -252,79 +264,227 @@ species guest skills: [moving, fipa] control:simple_bdi {
     		guest sender <- content[1];
     		float l <- getLiking(sender);
 			
-			if ((l > 0.5) or (l > 0 and moodFor = "concert")) {
-					do accept_proposal with: (message:: i, contents:: []);
-				} else  {
-					do reject_proposal with: (message:: i, contents:: []);
-				}
+			
 				
 			if (msg = "dance") {
-				
+				if (self.guestType = "noisyPartyAnimal") {
+					if (l >= 0) {
+						write self.name + " will send ACCEPT to " + sender;		
+						do accept_proposal with: (message:: i, contents:: []);
+					}
+					else {
+						write self.name + " will send REJECT to " + sender;	
+						do reject_proposal with: (message:: i, contents:: []);
+					}
+				}
+				else {
+					if ((l > 0.5) or (l >= 0 and moodFor = "concert")) {
+						write self.name + " will send ACCEPT to " + sender;		
+						do accept_proposal with: (message:: i, contents:: []);
+					} 
+					else  {
+						write self.name + " will send REJECT to " + sender;	
+						do reject_proposal with: (message:: i, contents:: []);
+					}
+				}
 			} 
 				
 			else if (msg = "drink") {
-					
+				if (self.guestType = "noisyPartyAnimal" or self.guestType = "quietPartyAnimal") {
+					if (l >= 0) {
+						write self.name + " will send ACCEPT to " + sender;		
+						do accept_proposal with: (message:: i, contents:: []);
+					}
+					else {
+						write self.name + " will send REJECT to " + sender;	
+						do reject_proposal with: (message:: i, contents:: []);
+					}
+				}
+				else {
+					if ((l > 0.5) or (l >= 0 and moodFor = "concert")) {
+						write self.name + " will send ACCEPT to " + sender;		
+						do accept_proposal with: (message:: i, contents:: []);
+					} 
+					else  {
+						write self.name + " will send REJECT to " + sender;	
+						do reject_proposal with: (message:: i, contents:: []);
+					}
+				}
 			}
 				
 			else if (msg = "purpose of life") {
-					
+				if (self.guestType = "deepTopicsChatter" or self.guestType = "boring") {
+					if (l >= 0) {
+						write self.name + " will send ACCEPT to " + sender;		
+						do accept_proposal with: (message:: i, contents:: []);
+					}
+					else {
+						write self.name + " will send REJECT to " + sender;	
+						do reject_proposal with: (message:: i, contents:: []);
+					}
+				}
+				else {
+					write self.name + " will send REJECT to " + sender;	
+					do reject_proposal with: (message:: i, contents:: []);
+				}
 			}
 				
 			else if (msg = "monopoly") {
-					
+				if (self.guestType = "boring" or self.guestType = "cringy") {
+					if (l >= 0.5) {
+						write self.name + " will send ACCEPT to " + sender;		
+						do accept_proposal with: (message:: i, contents:: []);
+					}
+					else if (l>=0 and moodFor = "bar"){
+						write self.name + " will send ACCEPT to " + sender;	
+						do accept_proposal with: (message:: i, contents:: []);
+					}
+					else {
+						write self.name + " will send REJECT to " + sender;	
+						do reject_proposal with: (message:: i, contents:: []);
+					}
+				}
+				else {
+					write self.name + " will send REJECT to " + sender;	
+					do reject_proposal with: (message:: i, contents:: []);
+				}
 			}
 				
 			else if (msg = "expired candy") {
-					
+				write self.name + " will send REJECT to " + sender;	
+				do reject_proposal with: (message:: i, contents:: []);
 			}
 				
 			else if (msg = "dance close by") {
-			
+				if (l >= 0) {
+					write self.name + " will send ACCEPT to " + sender;	
+					do accept_proposal with: (message:: i, contents:: []);
+				}
+				else {
+					write self.name + " will send REJECT to " + sender;	
+					do reject_proposal with: (message:: i, contents:: []);
+				}
 			}
 				
 			else if (msg = "raised drink") {
-					
+				if (l >= 0) {
+					write self.name + " will send ACCEPT to " + sender;	
+					do accept_proposal with: (message:: i, contents:: []);
+				}
+				else {
+					write self.name + " will send REJECT to " + sender;	
+					do reject_proposal with: (message:: i, contents:: []);
+				}
 			}
 				
 			else if (msg = "mini cv") {
-					
+				if(self.guestType != "deepTopicsChatter") {
+					if (l >= 0.5) {
+						if(self.guestType = "crazyPartyAnimal" and moodFor = "concert") {
+							write self.name + " will send REJECT to " + sender;	
+							do reject_proposal with: (message:: i, contents:: []);
+						}
+						else {
+							write self.name + " will send ACCEPT to " + sender;	
+							do accept_proposal with: (message:: i, contents:: []);
+						}
+					}
+				}
+				else {
+					write self.name + " will send REJECT to " + sender;	
+					do reject_proposal with: (message:: i, contents:: []);
+				}
 			}
 				
 			else if (msg = "weather talk") {
-					
+				if(self.guestType = "boring" and l >= 0) {
+					write self.name + " will send ACCEPT to " + sender;	
+					do accept_proposal with: (message:: i, contents:: []);
+				}
+				else {
+					write self.name + " will send REJECT to " + sender;	
+					do reject_proposal with: (message:: i, contents:: []);
+				}
 			}
 				
 			else if (msg = "drunk people comment") {
-					
+				if (l >= 0.5) {
+					write self.name + " will send ACCEPT to " + sender;	
+					do accept_proposal with: (message:: i, contents:: []);
+				}
+				else {
+					write self.name + " will send REJECT to " + sender;	
+					do reject_proposal with: (message:: i, contents:: []);
+				}
 			}
 				
 			else if (msg = "mood ruiner") {
-					
+				write self.name + " will send REJECT to " + sender;	
+				do reject_proposal with: (message:: i, contents:: []);
 			}
 				
 			else if (msg = "source of problems") {
-					
+				if(self.guestType = "boring" or self.guestType = "cringy" or self.guestType = "deepTopicsChatter") {
+					if (l >= 0.5) {
+						write self.name + " will send ACCEPT to " + sender;	
+						do accept_proposal with: (message:: i, contents:: []);
+					}
+					else {
+						write self.name + " will send REJECT to " + sender;	
+						do reject_proposal with: (message:: i, contents:: []);
+					}
+				}
 			}
 				
 			else if (msg = "ask to leave") {
-					
+				write self.name + " will send REJECT to " + sender;	
+				do reject_proposal with: (message:: i, contents:: []);
 			}
 				
 			else if (msg = "insulted") {
-					
+				write self.name + " will send REJECT to " + sender;	
+				do reject_proposal with: (message:: i, contents:: []);
 			}
 				
 				
 			
 		}
     }
+    
+    
+    
+    action refreshOptions {
+    	if(length(placesVisited) >= numPlaces/3) {
+    		placesVisited <- nil;
+    	}
+    	if(length(guestsInteracted) >= numGuests/5) {
+    		guestsInteracted <- nil;
+			acceptedFrom <- nil;
+			rejectedFrom <- nil;
+    	}
+    }
+    
 	
-	reflex happinessStatus1 when: happiness >= -100 and happiness < -50{
-		// change place
+    
+    reflex bored when: time >= currTime + timeDiff {
+		currTime <- time;
+		write self.name + " spent enough time here and will look at another place.";
+		happiness <- happiness -1;
+		do refreshOptions;
 		do remove_intention(initiate_interaction, true); 
+		//do add_desire(find_place);
+		
 	}
 	
-	reflex happinessStatus2 when: happiness < -100 {
+	reflex changePlace when: happiness > -50 and happiness <= -5 {
+		write self.name + " is not enjoying this and will look for another place.";
+		happiness <- -2;
+		do refreshOptions;
+		do remove_intention(initiate_interaction, true); 
+		//do add_desire(find_place);
+	}
+	
+	reflex easyWayOut when: happiness <= -10 {
 		// commit suicide
 		write "SUICIDE name: " + self.name + " happiness: " + happiness + " type: " + self.guestType;
 		do die;
@@ -332,9 +492,10 @@ species guest skills: [moving, fipa] control:simple_bdi {
 	
 	plan scopeFriends intention: initiate_interaction {
 
+		//write self.name + " has this social network: " + social_link_base;
 		loop relation over: social_link_base {
 				if(!(guestsInteracted contains (relation.agent as string))) {
-					write self.name + " has this social network: " + relation;
+					//write self.name + " has this social contact: " + relation;
 				
 					if(relation.liking >= 0.7) {
 						if (self.guestType = "noisyPartyAnimal") {
@@ -426,11 +587,6 @@ species guest skills: [moving, fipa] control:simple_bdi {
 			
 			add relation.agent as string to: guestsInteracted;
 			
-
-
-			
-			
-			
 			
 	}
 		
@@ -440,23 +596,23 @@ species guest skills: [moving, fipa] control:simple_bdi {
 
 	
 	
-	perceive target: place in: viewDist {
+	perceive target: place in: viewDistPlace {
 		focus id:place_at_location var:location;
 		ask myself {
 			// if the guest's mood for a place (bar, concert etc) is the same as the place type
 			if(self.moodFor = myself.type) {
 				//then a suitable place has been found
-				do remove_intention(find_place, false);
+				if(!(self.placesVisited contains myself.location)) {
+					do remove_intention(find_place, false);
+				}
+				
 			}
 		}
 	}
 	
 	rule belief: place_location new_desire: have_fun strength: 2.0;
 	
-	reflex refreshOptions when: length(placesVisited) = numPlaces/3 {
-		placesVisited <- nil;
-	}
-	
+
 	plan go_have_fun intention: have_fun {
 		if(target = nil or (placesVisited contains target)) {
 			do add_subintention(get_current_intention(),choose_place, true);
@@ -465,7 +621,6 @@ species guest skills: [moving, fipa] control:simple_bdi {
 		else {
 			do goto target: target;
 			if (target distance_to self.location = 0) {
-				//write self.name + " has stopped moving while going to " + target;
 				add target to: placesVisited;
 				write self.name + " has found a place!";
 				do add_subintention(get_current_intention(), initiate_interaction, true);
@@ -482,7 +637,7 @@ species guest skills: [moving, fipa] control:simple_bdi {
         	place closestPlace <- agent_closest_to(coordinates) as place;
         	if(closestPlace != nil) {
         		if(closestPlace.type = self.moodFor and !(placesVisited contains closestPlace)) {
-        		add coordinates to: suitable_places;
+        			add coordinates to: suitable_places;
         		}	
         	}
 
@@ -501,21 +656,28 @@ species guest skills: [moving, fipa] control:simple_bdi {
 		rgb agentColour <- #green;
 		rgb agentBorder <- #green;
 		
-		if(guestType = "noisyPartyAnimal") {
-			agentColour <- #orange;
+		if(dead(self)) {
+			agentColour <- #red;
 		}
-		else if (guestType = "quietPartyAnimal") {
-			agentColour <- #blue;
+		else {
+			if(guestType = "noisyPartyAnimal") {
+				agentColour <- #yellow;
+			}
+			else if (guestType = "quietPartyAnimal") {
+				agentColour <- #blue;
+			}
+			else if (guestType = "deepTopicsChatter") {
+				agentColour <- #green;
+			}
+			else if (guestType = "boring") {
+				agentColour <- #gray;
+			}
+			else if (guestType = "cringy") {
+				agentColour <- #black;
+			}
 		}
-		else if (guestType = "deepTopicsChatter") {
-			agentColour <- #green;
-		}
-		else if (guestType = "boring") {
-			agentColour <- #gray;
-		}
-		else if (guestType = "cringy") {
-			agentColour <- #black;
-		}
+		
+		
 		
 		
 		if(moodFor = "bar") {
