@@ -51,6 +51,7 @@ species guest skills: [moving, fipa] control:simple_bdi {
 	string moodFor <- placeTypes[rnd(0, length(placeTypes)-1)];
 	
 	list<string> guestsInteracted <- nil;
+	list<point> placesVisited <- nil;
 	bool isInteracting <- false;
 	int happiness <- 0;
 	
@@ -64,7 +65,6 @@ species guest skills: [moving, fipa] control:simple_bdi {
 	float neurotism <- rnd(0.0, 1.0);
 	
 	string guestType <- nil;
-	
 	
 	
 	point target;
@@ -222,14 +222,44 @@ species guest skills: [moving, fipa] control:simple_bdi {
 		
     }
     
+    float getLiking (guest sender) {
+    	loop relation over: social_link_base {
+			if (relation.agent = sender) {
+				return relation.liking;
+			}
+		}
+    }
+    
+    reflex getAccepts when: !empty(accept_proposals) {
+    	loop p over: accept_proposals {
+    		happiness <- happiness + 1;
+    		write "ACCEPT " + self.name + " HAPPINESS " + happiness + " FROM " + p.sender;
+    	}
+    	
+    }
+    
+    reflex getRejects when: !empty(reject_proposals) {
+    	loop p over: accept_proposals {
+    		happiness <- happiness - 1;
+    		write "REJECT " + self.name + " HAPPINESS " + happiness + " FROM " + p.sender;
+    	}
+    }
     
     reflex getCfps when: !empty(cfps) {
     	loop i over: cfps {
     		list content <- i.contents;
     		string msg <- content[0];
     		guest sender <- content[1];
+    		float l <- getLiking(sender);
+			
+			if ((l > 0.5) or (l > 0 and moodFor = "concert")) {
+					do accept_proposal with: (message:: i, contents:: []);
+				} else  {
+					do reject_proposal with: (message:: i, contents:: []);
+				}
+				
 			if (msg = "dance") {
-					
+				
 			} 
 				
 			else if (msg = "drink") {
@@ -289,6 +319,16 @@ species guest skills: [moving, fipa] control:simple_bdi {
 		}
     }
 	
+	reflex happinessStatus1 when: happiness >= -100 and happiness < -50{
+		// change place
+		do remove_intention(initiate_interaction, true); 
+	}
+	
+	reflex happinessStatus2 when: happiness < -100 {
+		// commit suicide
+		write "SUICIDE name: " + self.name + " happiness: " + happiness + " type: " + self.guestType;
+		do die;
+	}
 	
 	plan scopeFriends intention: initiate_interaction {
 
@@ -394,15 +434,6 @@ species guest skills: [moving, fipa] control:simple_bdi {
 			
 	}
 		
-			
-
-		//write social_link_base;
-//		if(length(social_link_base) > 0) {
-//			write self.name;
-//			write social_link_base[0].agent;
-//			write social_link_base[0].liking;
-//			write social_link_base[0].familiarity;
-//		}
 		
 
 	}
@@ -422,8 +453,12 @@ species guest skills: [moving, fipa] control:simple_bdi {
 	
 	rule belief: place_location new_desire: have_fun strength: 2.0;
 	
+	reflex refreshOptions when: length(placesVisited) = numPlaces/3 {
+		placesVisited <- nil;
+	}
+	
 	plan go_have_fun intention: have_fun {
-		if(target = nil) {
+		if(target = nil or (placesVisited contains target)) {
 			do add_subintention(get_current_intention(),choose_place, true);
             do current_intention_on_hold();
 		}
@@ -431,6 +466,8 @@ species guest skills: [moving, fipa] control:simple_bdi {
 			do goto target: target;
 			if (target distance_to self.location = 0) {
 				//write self.name + " has stopped moving while going to " + target;
+				add target to: placesVisited;
+				write self.name + " has found a place!";
 				do add_subintention(get_current_intention(), initiate_interaction, true);
 				do current_intention_on_hold();
 			}
@@ -444,7 +481,7 @@ species guest skills: [moving, fipa] control:simple_bdi {
         loop coordinates over: possible_places {
         	place closestPlace <- agent_closest_to(coordinates) as place;
         	if(closestPlace != nil) {
-        		if(closestPlace.type = self.moodFor) {
+        		if(closestPlace.type = self.moodFor and !(placesVisited contains closestPlace)) {
         		add coordinates to: suitable_places;
         		}	
         	}
