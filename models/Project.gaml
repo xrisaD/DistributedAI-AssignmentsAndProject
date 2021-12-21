@@ -33,7 +33,6 @@ global {
         	concert <- self.setType("concert");
         }
     	create party_animal number: nb_party_animals;
-    	create chill_person number: nb_chill_people;
     }
     
 }
@@ -54,47 +53,16 @@ species party_animal skills: [moving] control:simple_bdi {
 		do add_desire(find_place);
 	}
 	
-	perceive target: place in: view_dist { 
-       focus id: place_at_location var: location;
-       ask myself {
-            do remove_intention(find_place, false);
-        }
-    }
-    
-    rule belief: place_location new_desire: have_fun strength: 2.0;
-    
-     plan have_fun intention:have_fun  {
-     	write "have_fun";
-     }
 	
 	plan lets_wander intention:find_place {
+		write "ww";
         do wander;
     }
     
     aspect default { draw circle(1) color: #red; }
 }
 
-species chill_person skills: [moving] control:simple_bdi {
-	bool use_emotions_architecture <- true ;
-	bool use_personality <- true;
-	float openness <- rnd(0.0, 1.0);
-	float conscientiousness <- rnd(0.0, 1.0);
-	float extroversion <- 0.0;
-	float agreeableness <- rnd(0.0, 1.0);
-	float neurotism <- rnd(0.0, 1.0);
-    int quantity <- rnd(1,20);
-    
-    init {
-		do add_desire(find_place);
-	}
-    
-    plan lets_wander intention:find_place {
-		write "ok!";
-        do wander;
-    }
-    
-     aspect default { draw circle(1) color: #blue;}
-}
+
 
 species place {
 	string type <- "";
@@ -118,7 +86,6 @@ experiment GoldBdi type: gui {
         display map type: opengl {
         species place ;
         species party_animal ;
-        species chill_person ;
     }
     }
 }
