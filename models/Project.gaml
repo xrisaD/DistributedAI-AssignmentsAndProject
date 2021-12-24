@@ -698,13 +698,17 @@ species guest skills: [moving, fipa] control:simple_bdi {
 
 
 
-experiment GoldBdi type: gui {
+experiment goBDI type: gui {
     output {
         display map type: opengl {
             species place;
             species guest;
         }
-
+		display happinessChart {
+			chart "sum of happiness" {
+				data "sum happiness of each guest" value: guest sum_of each.happiness;
+			}
+		}
 
     }
 }
