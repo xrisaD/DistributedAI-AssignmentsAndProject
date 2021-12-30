@@ -115,8 +115,10 @@ species guest skills: [moving, fipa] control:simple_bdi {
 
 	
 	perceive target: guest in: viewDist {
-		
-		if(myself.guestType = "noisyPartyAnimal") {
+		if (!dead(self)) {
+			
+			
+			if(myself.guestType = "noisyPartyAnimal") {
 			
 			if(guestType = "noisyPartyAnimal") {
 				socialize liking: 1;
@@ -223,6 +225,10 @@ species guest skills: [moving, fipa] control:simple_bdi {
 			}
 			
 		}
+			
+			
+		}
+		
 		
 		
     }
@@ -235,9 +241,9 @@ species guest skills: [moving, fipa] control:simple_bdi {
 		}
     }
     
-    reflex getAccepts when: !empty(accept_proposals) {
+    reflex getAccepts when: !empty(accept_proposals) and !dead(self) {
     	loop p over: accept_proposals {
-    		if(!(acceptedFrom contains p.sender)) {
+    		if(!(acceptedFrom contains p.sender) and !dead(p.sender as guest)) {
 	    		add p.sender to: acceptedFrom;
 	    		happiness <- happiness + 1;	
 	    		write "ACCEPT " + self.name + " HAPPINESS " + happiness + " FROM " + p.sender;
@@ -246,9 +252,9 @@ species guest skills: [moving, fipa] control:simple_bdi {
     	}
     }
     
-    reflex getRejects when: !empty(reject_proposals) {
+    reflex getRejects when: !empty(reject_proposals) and !dead(self) {
     	loop p over: reject_proposals {
-    		if(!(rejectedFrom contains p.sender)) {
+    		if(!(rejectedFrom contains p.sender) and !dead(p.sender as guest)) {
 	    		add p.sender to: rejectedFrom;
 	    		happiness <- happiness - 1;
     			write "REJECT " + self.name + " HAPPINESS " + happiness + " FROM " + p.sender;
@@ -257,7 +263,7 @@ species guest skills: [moving, fipa] control:simple_bdi {
     	}
     }
     
-    reflex getCfps when: !empty(cfps) {
+    reflex getCfps when: !empty(cfps) and !dead(self) {
     	loop i over: cfps {
     		list content <- i.contents;
     		string msg <- content[0];
@@ -466,7 +472,7 @@ species guest skills: [moving, fipa] control:simple_bdi {
     
 	
     
-    reflex bored when: time >= currTime + timeDiff {
+    reflex bored when: time >= currTime + timeDiff and !dead(self) {
 		currTime <- time;
 		write self.name + " spent enough time here and will look at another place.";
 		happiness <- happiness -1;
@@ -476,7 +482,13 @@ species guest skills: [moving, fipa] control:simple_bdi {
 		
 	}
 	
-	reflex changePlace when: happiness > -50 and happiness <= -5 {
+	reflex easyWayOut when: happiness <= -10 and !dead(self) {
+		// commit suicide
+		write "SUICIDE name: " + self.name + " happiness: " + happiness + " type: " + self.guestType;
+		do die;
+	}
+	
+	reflex changePlace when: happiness > -10 and happiness <= -5 and !dead(self) {
 		write self.name + " is not enjoying this and will look for another place.";
 		happiness <- -2;
 		do refreshOptions;
@@ -484,17 +496,13 @@ species guest skills: [moving, fipa] control:simple_bdi {
 		//do add_desire(find_place);
 	}
 	
-	reflex easyWayOut when: happiness <= -10 {
-		// commit suicide
-		write "SUICIDE name: " + self.name + " happiness: " + happiness + " type: " + self.guestType;
-		do die;
-	}
+
 	
-	plan scopeFriends intention: initiate_interaction {
+	plan scopeFriends intention: initiate_interaction when: !dead(self){
 
 		//write self.name + " has this social network: " + social_link_base;
 		loop relation over: social_link_base {
-				if(!(guestsInteracted contains (relation.agent as string))) {
+				if(!(guestsInteracted contains (relation.agent as string)) and !dead(relation.agent as guest)) {
 					//write self.name + " has this social contact: " + relation;
 				
 					if(relation.liking >= 0.7) {
@@ -657,7 +665,7 @@ species guest skills: [moving, fipa] control:simple_bdi {
 		rgb agentBorder <- #green;
 		
 		if(dead(self)) {
-			agentColour <- #red;
+			agentColour <- #purple;
 		}
 		else {
 			if(guestType = "noisyPartyAnimal") {
@@ -686,7 +694,16 @@ species guest skills: [moving, fipa] control:simple_bdi {
 		else if (moodFor = "concert") {
 			agentBorder <- #red;
 		}
-     	draw circle(1) color: agentColour border: agentBorder;
+		
+		
+		if(dead(self)) {
+			draw cross(3) color: agentColour border: #black;
+		}
+		else {
+			draw circle(1) color: agentColour border: agentBorder;
+		}
+     	
+     	
     }
 	
 }
@@ -709,6 +726,10 @@ experiment goBDI type: gui {
 				data "sum happiness of each guest" value: guest sum_of each.happiness;
 			}
 		}
-
+		display populationChart {
+			chart "number of guests" {
+				data "number of guests that are alive" value: length(guest);
+			}
+		}
     }
 }
