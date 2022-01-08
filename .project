@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
+
 	<name>AgentsHomeworks</name>
 
 	<comment></comment>
@@ -16,7 +17,7 @@
 		<nature>org.eclipse.xtext.ui.shared.xtextNature</nature>
 		<nature>msi.gama.application.gamaNature</nature>
 	</natures>
-<<<<<<< HEAD
+
 	<linkedResources>
 		<link>
 			<name>external/1200px-Panathinaikos_BC_logo.svg.png</name>
@@ -34,6 +35,4 @@
 			<locationURI>CACHE_LOC/images.theconversation.com+_++_+files+_+393210+_+original+_+file-20210401-13-z6rl6z.jpg</locationURI>
 		</link>
 	</linkedResources>
-=======
->>>>>>> project-a/main
 </projectDescription>
