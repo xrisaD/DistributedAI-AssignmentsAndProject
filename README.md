@@ -34,3 +34,11 @@ Implementation of 3 types of auctions:
 * Dutch auction
 * English auction
 * Sealed-bid auction
+
+# Assignment 3
+
+<br>
+* FestivalSpeakers.gaml: solving N Queen Problem
+* UtilityStages.gaml
+* UtilityStagesCrowdMass.gaml
+* UtilityStagesSquidGame.gaml
