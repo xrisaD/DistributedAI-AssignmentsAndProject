@@ -1,13 +1,10 @@
-<<<<<<< HEAD
+
 # Distributed Artificial Intelligence
 Distributed Artificial Intelligence Course, Second Assignment @KTH
 <br>
-Implementation of 3 types of auctions: 
-* Dutch auction
-* English auction
-* Sealed-bid auction
-=======
-# Distributed Artificial Intelligence 
+
+# Assignment 1
+
 Distributed Artificial Intelligence Course, First Assignment @KTH
 <br>
 <br>
@@ -31,4 +28,9 @@ A new agent (Security Guard) is created  who kills the bad agents.
 <br>
 Festival4.gaml: Extra effort - Find the closest shop
 
->>>>>>> project-a/main
+# Assignment 2
+
+Implementation of 3 types of auctions: 
+* Dutch auction
+* English auction
+* Sealed-bid auction
