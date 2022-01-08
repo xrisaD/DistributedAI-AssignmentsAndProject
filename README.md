@@ -40,7 +40,12 @@ Implementation of 3 types of auctions:
 <br>
 
 * FestivalSpeakers.gaml: solving N Queen Problem
+
 ![queens](images/queen_problem.PNG)
 * UtilityStages.gaml: Basic festival
 * UtilityStagesCrowdMass.gaml: Introverts and extroverts added, introverts tend to prefer less crowded compared to the extroverts 
 * UtilityStagesSquidGame.gaml: Squid Game Festival, a special type of festival
+
+# Project
+A festival implemented with the Belief-Desire-Intention (BDI) Architecture.
+
