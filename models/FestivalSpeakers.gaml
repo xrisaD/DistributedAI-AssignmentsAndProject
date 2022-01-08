@@ -9,7 +9,7 @@
 model FestivalSpeakers
 
 global {
-	int grid <- 8;
+	int grid <- 12;
 	int queens <- grid;
 	float gridSize <- 100/grid;
 	init {
