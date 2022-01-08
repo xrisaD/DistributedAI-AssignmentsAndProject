@@ -1,6 +1,6 @@
 
 # Distributed Artificial Intelligence
-Distributed Artificial Intelligence Course, Second Assignment @KTH
+Distributed Artificial Intelligence Course @KTH
 <br>
 
 # Assignment 1
