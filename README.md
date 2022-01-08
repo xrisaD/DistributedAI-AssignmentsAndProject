@@ -43,3 +43,6 @@ Implementation of 3 types of auctions:
 * UtilityStages.gaml
 * UtilityStagesCrowdMass.gaml
 * UtilityStagesSquidGame.gaml
+
+# Project
+A festival implemented with the Belief-Desire-Intention (BDI) Architecture.
