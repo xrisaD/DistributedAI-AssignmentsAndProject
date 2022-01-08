@@ -38,6 +38,7 @@ Implementation of 3 types of auctions:
 # Assignment 3
 
 <br>
+
 * FestivalSpeakers.gaml: solving N Queen Problem
 * UtilityStages.gaml
 * UtilityStagesCrowdMass.gaml
